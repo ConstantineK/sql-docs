@@ -215,11 +215,11 @@ The same concepts hold true when you use the dynamic management views. By using 
 ```sql
 SELECT 
     ag.[name] AS [AG Name], 
-    ag.is _Distributed, 
+    ag.is_Distributed, 
     ar.replica_server_name AS [Replica Name]    
 FROM sys.availability_groups AS ag 
-INNER JOIN sys.availability_replicas AS ar       
-ON ag.group _id = ar.group _id;
+INNER JOIN sys.availability_replicas AS ar ON 
+	ag.group_id = ar.group_id;
 ```
 
 An example of output from the second WSFC cluster that's participating in a distributed availability group is shown in the following figure. SPAG1 is composed of two replicas: DENNIS and JY. However, the distributed availability group named SPDistAG has the names of the two participating availability groups (SPAG1 and SPAG2) rather than the names of the instances, as with a traditional availability group. 
@@ -230,18 +230,18 @@ In SQL Server Management Studio, any status shown on the Dashboard and other are
 
 ```sql
 SELECT 
-	ag.[name] as [AG Name],
+	ag.[name] AS [AG Name],
 	ag.is_distributed, 
-	ar.replica_server_name as [Underlying AG], 
-	ars.role_desc as [Role], 
-	ars.synchronization_health_desc as [Sync Status]
+	ar.replica_server_name AS [Underlying AG], 
+	ars.role_desc AS [Role], 
+	ars.synchronization_health_desc AS [Sync Status]
 FROM sys.availability_groups ag
 INNER JOIN sys.availability_replicas ar ON
 	ag.group_id = ar.group_id 
 INNER JOIN sys.dm_hadr_availability_replica_states ars ON	
 	ar.replica_id = ars.replica_id
 WHERE
-	ag.is_distributed = 1
+	ag.is_distributed = 1;
 ```
        
        
@@ -252,11 +252,11 @@ To further extend the previous query, you can also see the underlying performanc
 
 ```
 SELECT 
-	ag.[name] as [Distributed AG Name], 
-	ar.replica_server_name as [Underlying AG], 
-	dbs.[name] as [DB], 
-	ars.role_desc as [Role], 
-	drs.synchronization_health_desc as [Sync Status], 
+	ag.[name] AS [Distributed AG Name], 
+	ar.replica_server_name AS [Underlying AG], 
+	dbs.[name] AS [DB], 
+	ars.role_desc AS [Role], 
+	drs.synchronization_health_desc AS [Sync Status], 
 	drs.log_send_queue_size, 
 	drs.log_send_rate, 
 	drs.redo_queue_size, 
@@ -271,7 +271,7 @@ INNER JOIN sys.dm_hadr_database_replica_states drs ON
 	AND ars.replica_id = drs.replica_id
 	AND dbs.database_id = drs.database_id
 WHERE 
-	ag.is_distributed = 1
+	ag.is_distributed = 1;
 ```
 
 ![Performance information for a distributed availability group][13]
