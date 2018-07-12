@@ -213,12 +213,13 @@ As shown in the following figure, secondary replicas show nothing in SQL Server 
 The same concepts hold true when you use the dynamic management views. By using the following query, you can see all the availability groups (regular and distributed) and the nodes participating in them. This result is displayed only if you query the primary replica in one of the WSFC clusters that are participating in the distributed availability group. There is a new column in the dynamic management view `sys.availability_groups` named `is_distributed`, which is 1 when the availability group is a distributed availability group. To see this column:
 
 ```sql
-SELECT ag.[name] as 'AG Name', 
-    ag.Is_Distributed, 
-    ar.replica_server_name as 'Replica Name'
-FROM 	sys.availability_groups ag, 
-    sys.availability_replicas ar       
-WHERE	ag.group_id = ar.group_id
+SELECT 
+    ag.[name] AS [AG Name], 
+    ag.is _Distributed, 
+    ar.replica_server_name AS [Replica Name]    
+FROM sys.availability_groups AS ag 
+INNER JOIN sys.availability_replicas AS ar       
+ON ag.group _id = ar.group _id;
 ```
 
 An example of output from the second WSFC cluster that's participating in a distributed availability group is shown in the following figure. SPAG1 is composed of two replicas: DENNIS and JY. However, the distributed availability group named SPDistAG has the names of the two participating availability groups (SPAG1 and SPAG2) rather than the names of the instances, as with a traditional availability group. 
@@ -228,13 +229,18 @@ An example of output from the second WSFC cluster that's participating in a dist
 In SQL Server Management Studio, any status shown on the Dashboard and other areas are for local synchronization only within that availability group. To display the health of a distributed availability group, query the dynamic management views. The following example query extends and refines the previous query:
 
 ```sql
-SELECT ag.[name] as 'AG Name', ag.is_distributed, ar.replica_server_name as 'Underlying AG', ars.role_desc as 'Role', ars.synchronization_health_desc as 'Sync Status'
+SELECT 
+	ag.[name] as [AG Name],
+	ag.is_distributed, 
+	ar.replica_server_name as [Underlying AG], 
+	ars.role_desc as [Role], 
+	ars.synchronization_health_desc as [Sync Status]
 FROM 	sys.availability_groups ag, 
-sys.availability_replicas ar,       
-sys.dm_hadr_availability_replica_states ars       
-WHERE	ar.replica_id = ars.replica_id
-and 	ag.group_id = ar.group_id 
-and	ag.is_distributed = 1
+sys.availability_replicas ar       
+INNER JOIN sys.dm_hadr_availability_replica_states ars       
+ON	ar.replica_id = ars.replica_id
+AND 	ag.group_id = ar.group_id 
+AND	ag.is_distributed = 1
 ```
        
        
@@ -244,17 +250,27 @@ and	ag.is_distributed = 1
 To further extend the previous query, you can also see the underlying performance via the dynamic management views by adding in `sys.dm_hadr_database_replicas_states`. The dynamic management view currently stores information about the second availability group only. The following example query, run on the primary availability group, produces the sample output shown below:
 
 ```
-SELECT ag.[name] as 'Distributed AG Name', ar.replica_server_name as 'Underlying AG', dbs.[name] as 'DB', ars.role_desc as 'Role', drs.synchronization_health_desc as 'Sync Status', drs.log_send_queue_size, drs.log_send_rate, drs.redo_queue_size, drs.redo_rate
-FROM 	sys.databases dbs,
-	sys.availability_groups ag,
-	sys.availability_replicas ar,
-	sys.dm_hadr_availability_replica_states ars,
-	sys.dm_hadr_database_replica_states drs
-WHERE	drs.group_id = ag.group_id
-and	ar.replica_id = ars.replica_id
-and	ars.replica_id = drs.replica_id
-and	dbs.database_id = drs.database_id
-and	ag.is_distributed = 1
+SELECT 
+	ag.[name] as [Distributed AG Name], 
+	ar.replica_server_name as [Underlying AG], 
+	dbs.[name] as [DB], 
+	ars.role_desc as [Role], 
+	drs.synchronization_health_desc as [Sync Status], 
+	drs.log_send_queue_size, 
+	drs.log_send_rate, 
+	drs.redo_queue_size, 
+	drs.redo_rate
+FROM sys.databases dbs
+CROSS JOIN sys.availability_groups ag	
+CROSS JOIN sys.availability_replicas ar 
+INNER JOIN sys.dm_hadr_availability_replica_states ars ON
+	ar.replica_id = ars.replica_id
+INNER JOIN sys.dm_hadr_database_replica_states drs ON	
+	drs.group_id = ag.group_id
+	AND ars.replica_id = drs.replica_id
+	AND dbs.database_id = drs.database_id
+WHERE 
+	ag.is_distributed = 1
 ```
 
 ![Performance information for a distributed availability group][13]
