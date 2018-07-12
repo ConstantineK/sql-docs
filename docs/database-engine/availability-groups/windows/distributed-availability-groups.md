@@ -235,12 +235,13 @@ SELECT
 	ar.replica_server_name as [Underlying AG], 
 	ars.role_desc as [Role], 
 	ars.synchronization_health_desc as [Sync Status]
-FROM 	sys.availability_groups ag, 
-sys.availability_replicas ar       
-INNER JOIN sys.dm_hadr_availability_replica_states ars       
-ON	ar.replica_id = ars.replica_id
-AND 	ag.group_id = ar.group_id 
-AND	ag.is_distributed = 1
+FROM sys.availability_groups ag
+INNER JOIN sys.availability_replicas ar ON
+	ag.group_id = ar.group_id 
+INNER JOIN sys.dm_hadr_availability_replica_states ars ON	
+	ar.replica_id = ars.replica_id
+WHERE
+	ag.is_distributed = 1
 ```
        
        
